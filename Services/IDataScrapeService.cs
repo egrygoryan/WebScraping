@@ -1,6 +1,8 @@
-﻿namespace WebScrapping.Services;
+﻿using ErrorOr;
+
+namespace WebScrapping.Services;
 
 public interface IDataScrapeService
 {
-    ScrappedDataResponse GetScrappedData(IDocument document);
+    Task<ErrorOr<ScrappedDataResponse>> Scrape(string url);
 }

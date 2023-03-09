@@ -1,3 +1,4 @@
+using WebScrapping.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddServices();
-builder.Services.AddHttpClient<IValidateService, ValidateService>();
 
 var app = builder.Build();
 
@@ -21,24 +21,6 @@ app.UseExceptionMiddleware();
 
 app.UseHttpsRedirection();
 
-app.MapGet("/api/v1/crawler/scrape/{site}", async ([FromQuery] string site,
-                                                   [FromServices] IDataScrapeService scrapeService,
-                                                   [FromServices] IValidateService validationService) =>
-{
-    var url = UriBuilderConfiguration.ConfigureUri(site);
-
-    var config = Configuration.Default.WithDefaultLoader();
-    var context = BrowsingContext.New(config);
-    var document = await context.OpenAsync(url);
-
-    if (!await validationService.ValidateStatusCode(url))
-    {
-        return Results.NotFound(new { Message = "Provided resource is unreachable" });
-    }
-
-    var result = scrapeService.GetScrappedData(document);
-    return Results.Ok(result);
-
-});
+app.MapPost("/api/v1/crawler/scrape", ScrapeEndpoint.Scrape);
 
 app.Run();
