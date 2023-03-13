@@ -1,6 +1,4 @@
-﻿using ErrorOr;
-
-namespace WebScrapping.Services;
+﻿namespace WebScrapping.Services;
 
 public sealed class DataScrapeService : IDataScrapeService
 {
@@ -14,13 +12,18 @@ public sealed class DataScrapeService : IDataScrapeService
         {
             return Error.Validation();
         }
-        
+
         var document = await _browser.OpenAsync(url);
-        
+        if(document is null)
+        {
+            return Error.NotFound();
+        }
+
         var title = document.Title;
         var origin = document.Origin;
-        var description = document.QuerySelector("meta[property*=description]")?.GetAttribute("content");
+        var description = document.QuerySelector("meta[name=description]")?.GetAttribute("content");
+        var author = document.QuerySelector("meta[name=author]")?.GetAttribute("content");
 
-        return new ScrappedDataResponse(origin, title, description);
+        return new ScrappedDataResponse(origin, author, title, description);
     }
 }

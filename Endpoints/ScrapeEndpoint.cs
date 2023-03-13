@@ -10,7 +10,14 @@ public sealed class ScrapeEndpoint
 
         return response.MatchFirst<IResult>(
             Results.Ok,
-            x => Results.BadRequest(new {x.Code, x.Description}));
+            x => {
+                  var body = new { x.Code, x.Description };
+
+                  return x.Type == ErrorType.NotFound 
+                  ? Results.NotFound(body)
+                  : Results.BadRequest(body);
+                 }
+            );
     }
 }
 
