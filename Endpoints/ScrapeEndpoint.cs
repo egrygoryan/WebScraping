@@ -8,16 +8,9 @@ public sealed class ScrapeEndpoint
     {
         var response = await dataScrapeService.Scrape(resource.Url);
 
-        return response.MatchFirst<IResult>(
+        return response.MatchFirst(
             Results.Ok,
-            x => {
-                  var body = new { x.Code, x.Description };
-
-                  return x.Type == ErrorType.NotFound 
-                  ? Results.NotFound(body)
-                  : Results.BadRequest(body);
-                 }
-            );
+            error => Results.BadRequest(new { error.Code, error.Description }));
     }
 }
 

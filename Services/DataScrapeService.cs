@@ -10,15 +10,22 @@ public sealed class DataScrapeService : IDataScrapeService
     {
         if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
         {
-            return Error.Validation();
+            return Error.Validation(
+                code: "Uri.Validation",
+                description: "Url does not well-formed");
         }
-
+        
         var document = await _browser.OpenAsync(url);
-        if(document is null)
+        
+        var response = new HttpResponseMessage(document.StatusCode);
+        
+        if(!response.IsSuccessStatusCode)
         {
-            return Error.NotFound();
+            return Error.Failure(
+                code: "Document.Load.Failure",
+                description: $"Response does not indicate success status code. Status code is: '{document.StatusCode}'");
         }
-
+        
         var title = document.Title;
         var origin = document.Origin;
         var description = document.QuerySelector("meta[name=description]")?.GetAttribute("content");
