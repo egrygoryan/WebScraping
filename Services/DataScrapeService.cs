@@ -5,16 +5,23 @@ public sealed class DataScrapeService : IDataScrapeService
     private readonly IBrowsingContext _browser;
 
     public DataScrapeService(IBrowsingContext browser) => _browser = browser;
-
+    
     public async Task<ErrorOr<ScrappedDataResponse>> Scrape(string url)
     {
-        if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
             return Error.Validation(
                 code: "Uri.Validation",
                 description: "Url does not well-formed");
         }
-        
+
+        if (!new [] { Uri.UriSchemeHttp, Uri.UriSchemeHttps }.Contains(uri.Scheme))
+        {
+            return Error.Validation(
+                code: "Uri.Validation",
+                description: "Url does not represent Http(s) scheme");
+        }
+
         var document = await _browser.OpenAsync(url);
         
         var response = new HttpResponseMessage(document.StatusCode);
