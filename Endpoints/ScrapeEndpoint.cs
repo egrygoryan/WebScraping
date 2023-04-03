@@ -10,7 +10,7 @@ public sealed class ScrapeEndpoint
 
         return response.MatchFirst(
             Results.Ok,
-            error => Results.BadRequest(new { error.Code, error.Description }));
+            error => Results.Conflict(new { error.Code, error.Description }));
     }
 
     public static async Task<IResult> ScrapeRange(
@@ -20,7 +20,7 @@ public sealed class ScrapeEndpoint
         var response = await dataScrapeservice.ScrapeRange(resource.Url, resource.Range);
         return response.MatchFirst(
             Results.Ok,
-            error => Results.BadRequest(new { error.Code, error.Description }));
+            error => Results.Conflict(new { error.Code, error.Description }));
     }
 }
 
