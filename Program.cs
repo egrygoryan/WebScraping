@@ -22,5 +22,6 @@ app.UseExceptionMiddleware();
 app.UseHttpsRedirection();
 
 app.MapPost("/api/v1/crawler/scrape", ScrapeEndpoint.Scrape);
+app.MapPost("/api/v1/crawler/scrapeRange", ScrapeEndpoint.ScrapeRange);
 
 app.Run();
