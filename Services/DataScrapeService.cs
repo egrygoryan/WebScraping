@@ -1,12 +1,21 @@
-﻿namespace WebScrapping.Services;
+﻿using AngleSharp.Dom;
+using MediatR;
+using WebScrapping.Handlers.Requests;
+
+namespace WebScrapping.Services;
 
 public sealed class DataScrapeService : IDataScrapeService
 {
+    private readonly IMediator _mediator;
     private readonly IBrowsingContext _browser;
 
-    public DataScrapeService(IBrowsingContext browser) => _browser = browser;
-    
-    public async Task<ErrorOr<ScrappedDataResponse>> Scrape(string url)
+    public DataScrapeService(IMediator mediator, IBrowsingContext browser)
+    {
+        _mediator = mediator;
+        _browser = browser;
+    }
+
+    public async Task<ErrorOr<ScrappedDataResponse>> ScrapeArticle(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
@@ -52,49 +61,55 @@ public sealed class DataScrapeService : IDataScrapeService
         return new ScrappedDataResponse(origin, author, title, description, formattedDate);
     }
 
-    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeRange(string url, int blogsRange)
+    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog_v1(string url, int blogsRange)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return Error.Validation(
-                code: "Uri.Validation",
-                description: "Url does not well-formed");
-        }
+        var response = await _mediator.Send(new OpenDocumentRequest_v1(url));
+        var origin = response.Document.Location.Origin;
 
-        if (uri.Scheme is not ("http" or "https"))
-        {
-            return Error.Validation(
-                code: "Uri.Validation",
-                description: "Url does not represent Http(s) scheme");
-        }
-        var document = await _browser.OpenAsync(url);
+        var articles = response.Document
+            .QuerySelectorAll("article")
+            .Take(blogsRange)
+            .Select(article => article
+                .QuerySelector("a.post-card-content-link")?
+                .GetAttribute("href") ?? "")
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Select(x => new Uri(new (origin), x))
+            .Select(x => ScrapeArticle(x.ToString()))
+            .ToList();
 
-        var response = new HttpResponseMessage(document.StatusCode);
+        var awaiter = await Task.WhenAll(articles);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            return Error.Failure(
-                code: "Document.Load.Failure",
-                description: $"Response does not indicate success status code. Status code is: '{document.StatusCode}'");
-        }
+        var scrapedArticles = awaiter
+            .Where(x => !x.IsError)
+            .Select(x => x.Value)
+            .ToList();
 
-        var blogs = document.QuerySelectorAll("article").Take(blogsRange);
+        return scrapedArticles;
+    }
+    
+    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog_v2(string url, int blogsRange)
+    {
+        var response = await _mediator.Send(new OpenDocumentRequest_v2(url));
+        var origin = response.Document.Location.Origin;
 
-        StringBuilder sb = new();
+        var articles = response.Document
+            .QuerySelectorAll("article")
+            .Take(blogsRange)
+            .Select(article => article
+                .QuerySelector("a.post-card-content-link")?
+                .GetAttribute("href") ?? "")
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Select(x => new Uri(new (origin), x))
+            .Select(x => ScrapeArticle(x.ToString()))
+            .ToList();
 
-        var links = blogs.Aggregate(new List<string>(), (blogsList, blog) =>
-        {
-            var relative = blog.QuerySelector("a.post-card-content-link")?.GetAttribute("href");
-            sb.Clear();
-            sb.Append(url.TrimEnd('/')).Append(relative);
-            blogsList.Add(sb.ToString());
+        var awaiter = await Task.WhenAll(articles);
 
-            return blogsList;
-        });
+        var scrapedArticles = awaiter
+            .Where(x => !x.IsError)
+            .Select(x => x.Value)
+            .ToList();
 
- 
-        var blogsData = await Task.WhenAll(links.Select(async blog => (await Scrape(blog)).Value));
-
-        return blogsData;
+        return scrapedArticles;
     }
 }

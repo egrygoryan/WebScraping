@@ -8,5 +8,7 @@ public static class WebScrappingConfigurationExtension
         => services
             .AddSingleton<IBrowsingContext>(_ =>
                 BrowsingContext.New(Default.WithDefaultLoader()))
-            .AddSingleton<IDataScrapeService, DataScrapeService>();
+            .AddSingleton<IDataScrapeService, DataScrapeService>()
+            .AddMediatR(config => 
+                config.RegisterServicesFromAssemblyContaining<Program>());
 }

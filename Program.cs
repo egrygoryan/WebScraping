@@ -21,7 +21,8 @@ app.UseExceptionMiddleware();
 
 app.UseHttpsRedirection();
 
-app.MapPost("/api/v1/crawler/scrape", ScrapeEndpoint.Scrape);
-app.MapPost("/api/v1/crawler/scrapeRange", ScrapeEndpoint.ScrapeRange);
+app.MapPost("/api/v1/crawler/scrape", ScrapeEndpoint.ScrapeArticle);
+app.MapPost("/api/v1/crawler/blog/scrape", ScrapeEndpoint.ScrapeBlog_v1);
+app.MapPost("/api/v2/crawler/blog/scrape", ScrapeEndpoint.ScrapeBlog_v2);
 
 app.Run();

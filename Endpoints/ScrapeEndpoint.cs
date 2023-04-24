@@ -2,22 +2,32 @@ namespace WebScrapping.Endpoints;
 
 public sealed class ScrapeEndpoint
 {
-    public static async Task<IResult> Scrape(
+    public static async Task<IResult> ScrapeArticle(
         [FromBody] ScrapeResource resource,
         [FromServices] IDataScrapeService dataScrapeService)
     {
-        var response = await dataScrapeService.Scrape(resource.Url);
+        var response = await dataScrapeService.ScrapeArticle(resource.Url);
 
         return response.MatchFirst(
             Results.Ok,
             error => Results.Conflict(new { error.Code, error.Description }));
     }
 
-    public static async Task<IResult> ScrapeRange(
+    public static async Task<IResult> ScrapeBlog_v1(
         [FromBody] ScrapeResourceRange resource,
-        [FromServices] IDataScrapeService dataScrapeservice)
+        [FromServices] IDataScrapeService dataScrapeService)
     {
-        var response = await dataScrapeservice.ScrapeRange(resource.Url, resource.Range);
+        var response = await dataScrapeService.ScrapeBlog_v1(resource.Url, resource.Range);
+        return response.MatchFirst(
+            Results.Ok,
+            error => Results.Conflict(new { error.Code, error.Description }));
+    }
+    
+    public static async Task<IResult> ScrapeBlog_v2(
+        [FromBody] ScrapeResourceRange resource,
+        [FromServices] IDataScrapeService dataScrapeService)
+    {
+        var response = await dataScrapeService.ScrapeBlog_v2(resource.Url, resource.Range);
         return response.MatchFirst(
             Results.Ok,
             error => Results.Conflict(new { error.Code, error.Description }));
