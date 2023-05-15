@@ -1,11 +1,10 @@
 using MediatR.Pipeline;
-using WebScrapping.Handlers.Requests;
 
-namespace WebScrapping.Handlers.Option_One;
+namespace WebScrapping.Handlers;
 
-public sealed class ValidateOpenDocumentRequest : IRequestPreProcessor<OpenDocumentRequest_v1>
+public sealed class ValidateOpenDocumentRequest : IRequestPreProcessor<OpenDocumentRequest>
 {
-    public Task Process(OpenDocumentRequest_v1 request, CancellationToken ct)
+    public Task Process(OpenDocumentRequest request, CancellationToken ct)
     {
         if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri))
         {
@@ -21,13 +20,7 @@ public sealed class ValidateOpenDocumentRequest : IRequestPreProcessor<OpenDocum
                 scheme == Uri.UriSchemeHttps => true,
             _ => false
         };
-        
-        //
-        // Alternative option
-        //
-        // var isAllowedUriScheme = uri.Scheme != Uri.UriSchemeHttp || uri.Scheme != Uri.UriSchemeHttps;
-        //
-        
+
         if (!isAllowedUriScheme)
         {
             throw new ArgumentException(

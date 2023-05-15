@@ -1,57 +1,26 @@
-﻿using AngleSharp.Dom;
-using MediatR;
-using WebScrapping.Handlers.Requests;
-
-namespace WebScrapping.Services;
+﻿namespace WebScrapping.Services;
 
 public sealed class DataScrapeService : IDataScrapeService
 {
     private readonly IMediator _mediator;
-    private readonly IBrowsingContext _browser;
 
-    public DataScrapeService(IMediator mediator, IBrowsingContext browser)
-    {
-        _mediator = mediator;
-        _browser = browser;
-    }
+    public DataScrapeService(IMediator mediator) => _mediator = mediator;
 
     public async Task<ErrorOr<ScrappedDataResponse>> ScrapeArticle(string url)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return Error.Validation(
-                code: "Uri.Validation",
-                description: "Url does not well-formed");
-        }
-        
-        if (uri.Scheme is not ("http" or "https"))
-        {
-            return Error.Validation(
-                code: "Uri.Validation",
-                description: "Url does not represent Http(s) scheme");
-        }
-        var document = await _browser.OpenAsync(url);
+        var response = await _mediator.Send(new OpenDocumentRequest(url));
 
-        var response = new HttpResponseMessage(document.StatusCode);
+        var title = response.Document.Title;
+        var origin = response.Document.Location.Origin;
 
-        if (!response.IsSuccessStatusCode)
-        {
-            return Error.Failure(
-                code: "Document.Load.Failure",
-                description: $"Response does not indicate success status code. Status code is: '{document.StatusCode}'");
-        }
-
-        var title = document.Title;
-        var origin = document.Origin;
-
-        var descriptionSelector = document.QuerySelector("meta[name=description]")
-                                ?? document.QuerySelector("meta[property='og:description']");
+        var descriptionSelector = response.Document.QuerySelector("meta[name=description]")
+                                ?? response.Document.QuerySelector("meta[property='og:description']");
         var description = descriptionSelector?.GetAttribute("content");
 
-        var author = document.QuerySelector("meta[name=author]")?.GetAttribute("content")
-                   ?? document.QuerySelector(".author-name > a")?.TextContent;
+        var author = response.Document.QuerySelector("meta[name=author]")?.GetAttribute("content")
+                   ?? response.Document.QuerySelector(".author-name > a")?.TextContent;
 
-        string scrappedDate = document.QuerySelector("meta[property='article:published_time']")?.GetAttribute("content");
+        string scrappedDate = response.Document.QuerySelector("meta[property='article:published_time']")?.GetAttribute("content");
         string formattedDate = string.Empty;
         if(DateTime.TryParse(scrappedDate, out var format))
         {
@@ -61,35 +30,9 @@ public sealed class DataScrapeService : IDataScrapeService
         return new ScrappedDataResponse(origin, author, title, description, formattedDate);
     }
 
-    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog_v1(string url, int blogsRange)
+    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog(string url, int blogsRange)
     {
-        var response = await _mediator.Send(new OpenDocumentRequest_v1(url));
-        var origin = response.Document.Location.Origin;
-
-        var articles = response.Document
-            .QuerySelectorAll("article")
-            .Take(blogsRange)
-            .Select(article => article
-                .QuerySelector("a.post-card-content-link")?
-                .GetAttribute("href") ?? "")
-            .Where(x => !string.IsNullOrEmpty(x))
-            .Select(x => new Uri(new (origin), x))
-            .Select(x => ScrapeArticle(x.ToString()))
-            .ToList();
-
-        var awaiter = await Task.WhenAll(articles);
-
-        var scrapedArticles = awaiter
-            .Where(x => !x.IsError)
-            .Select(x => x.Value)
-            .ToList();
-
-        return scrapedArticles;
-    }
-    
-    public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog_v2(string url, int blogsRange)
-    {
-        var response = await _mediator.Send(new OpenDocumentRequest_v2(url));
+        var response = await _mediator.Send(new OpenDocumentRequest(url));
         var origin = response.Document.Location.Origin;
 
         var articles = response.Document

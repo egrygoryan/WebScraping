@@ -13,26 +13,13 @@ public sealed class ScrapeEndpoint
             error => Results.Conflict(new { error.Code, error.Description }));
     }
 
-    public static async Task<IResult> ScrapeBlog_v1(
+    public static async Task<IResult> ScrapeBlog(
         [FromBody] ScrapeResourceRange resource,
         [FromServices] IDataScrapeService dataScrapeService)
     {
-        var response = await dataScrapeService.ScrapeBlog_v1(resource.Url, resource.Range);
-        return response.MatchFirst(
-            Results.Ok,
-            error => Results.Conflict(new { error.Code, error.Description }));
-    }
-    
-    public static async Task<IResult> ScrapeBlog_v2(
-        [FromBody] ScrapeResourceRange resource,
-        [FromServices] IDataScrapeService dataScrapeService)
-    {
-        var response = await dataScrapeService.ScrapeBlog_v2(resource.Url, resource.Range);
+        var response = await dataScrapeService.ScrapeBlog(resource.Url, resource.Range);
         return response.MatchFirst(
             Results.Ok,
             error => Results.Conflict(new { error.Code, error.Description }));
     }
 }
-
-public sealed record ScrapeResource(string Url);
-public sealed record ScrapeResourceRange(string Url, int Range);

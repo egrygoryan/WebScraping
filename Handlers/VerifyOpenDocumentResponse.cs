@@ -1,11 +1,9 @@
 using System.Net;
 using MediatR.Pipeline;
-using WebScrapping.Handlers.Requests;
-using WebScrapping.Handlers.Responses;
 
-namespace WebScrapping.Handlers.Option_One;
+namespace WebScrapping.Handlers;
 
-public sealed class VerifyOpenDocumentResponse : IRequestPostProcessor<OpenDocumentRequest_v1, OpenDocumentResponse>
+public sealed class VerifyOpenDocumentResponse : IRequestPostProcessor<OpenDocumentRequest, OpenDocumentResponse>
 {
     private static readonly Predicate<HttpStatusCode> IsSuccessStatusCode = statusCode =>
     {
@@ -13,7 +11,7 @@ public sealed class VerifyOpenDocumentResponse : IRequestPostProcessor<OpenDocum
         return message.IsSuccessStatusCode;
     };
 
-    public Task Process(OpenDocumentRequest_v1 request, OpenDocumentResponse response, CancellationToken ct)
+    public Task Process(OpenDocumentRequest request, OpenDocumentResponse response, CancellationToken ct)
     {
         var statusCode = response.Document.StatusCode;
 
