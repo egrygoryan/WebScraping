@@ -1,6 +1,4 @@
-﻿using WebScrapping.CustomExceptions;
-
-namespace WebScrapping.CustomMiddleware;
+﻿namespace WebScrapping.CustomMiddleware;
 
 public class ExceptionMiddleware
 {
@@ -21,7 +19,6 @@ public class ExceptionMiddleware
     {
         context.Response.StatusCode = exception switch
         {
-            DocumentResponseException or ValidateUrlException => Status400BadRequest,
             HttpRequestException => Status404NotFound,
             _ => Status500InternalServerError,
         };

@@ -1,5 +1,5 @@
 ﻿using static AngleSharp.Configuration;
-using WebScrapping.Handlers.Behaviors;
+using MediatR.Pipeline;
 
 namespace WebScrapping.Configuration;
 
@@ -13,6 +13,6 @@ public static class WebScrappingConfigurationExtension
             .AddMediatR(config =>
             {
                 config.RegisterServicesFromAssemblyContaining<Program>();
-                config.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingPipelineBehavior<,>));
+                config.AddBehavior(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
             });
 }
