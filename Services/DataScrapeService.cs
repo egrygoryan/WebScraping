@@ -9,18 +9,25 @@ public sealed class DataScrapeService : IDataScrapeService
     public async Task<ErrorOr<ScrappedDataResponse>> ScrapeArticle(string url)
     {
         var response = await _mediator.Send(new OpenDocumentRequest(url));
+        if (response.IsError)
+        {
+            return ErrorOr<ScrappedDataResponse>
+                .From(response.Errors);
+        }
 
-        var title = response.Document.Title;
-        var origin = response.Document.Location.Origin;
+        var document = response.Value.Document;
 
-        var descriptionSelector = response.Document.QuerySelector("meta[name=description]")
-                                ?? response.Document.QuerySelector("meta[property='og:description']");
+        var title = document.Title;
+        var origin = document.Location.Origin;
+
+        var descriptionSelector = document.QuerySelector("meta[name=description]")
+                                ?? document.QuerySelector("meta[property='og:description']");
         var description = descriptionSelector?.GetAttribute("content");
 
-        var author = response.Document.QuerySelector("meta[name=author]")?.GetAttribute("content")
-                   ?? response.Document.QuerySelector(".author-name > a")?.TextContent;
+        var author = document.QuerySelector("meta[name=author]")?.GetAttribute("content")
+                   ?? document.QuerySelector(".author-name > a")?.TextContent;
 
-        string scrappedDate = response.Document.QuerySelector("meta[property='article:published_time']")?.GetAttribute("content");
+        string scrappedDate = document.QuerySelector("meta[property='article:published_time']")?.GetAttribute("content");
         string formattedDate = string.Empty;
         if(DateTime.TryParse(scrappedDate, out var format))
         {
@@ -33,9 +40,16 @@ public sealed class DataScrapeService : IDataScrapeService
     public async Task<ErrorOr<IEnumerable<ScrappedDataResponse>>> ScrapeBlog(string url, int blogsRange)
     {
         var response = await _mediator.Send(new OpenDocumentRequest(url));
-        var origin = response.Document.Location.Origin;
+        if (response.IsError)
+        {
+            return ErrorOr<IEnumerable<ScrappedDataResponse>>
+                .From(response.Errors);
+        }
+        var document = response.Value.Document;
 
-        var articles = response.Document
+        var origin = document.Location.Origin;
+
+        var articles = document
             .QuerySelectorAll("article")
             .Take(blogsRange)
             .Select(article => article
