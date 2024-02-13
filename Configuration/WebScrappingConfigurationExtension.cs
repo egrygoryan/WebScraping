@@ -1,5 +1,5 @@
-﻿using static AngleSharp.Configuration;
-using MediatR.Pipeline;
+﻿using MediatR.Pipeline;
+using static AngleSharp.Configuration;
 
 namespace WebScrapping.Configuration;
 
@@ -14,5 +14,8 @@ public static class WebScrappingConfigurationExtension
             {
                 config.RegisterServicesFromAssemblyContaining<Program>();
                 config.AddBehavior(typeof(IPipelineBehavior<,>), typeof(RequestExceptionProcessorBehavior<,>));
-            });
+            })
+            .AddTransient<IArticleRepository, ArticleRepository>()
+            .AddTransient<IBlogRepository, BlogRepository>()
+            .AddTransient<DataScrapeJob>();
 }
