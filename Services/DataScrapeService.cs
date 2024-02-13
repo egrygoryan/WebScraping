@@ -1,10 +1,8 @@
 ﻿namespace WebScrapping.Services;
 
-public sealed class DataScrapeService : IDataScrapeService
+public sealed class DataScrapeService(IMediator mediator) : IDataScrapeService
 {
-    private readonly IMediator _mediator;
-
-    public DataScrapeService(IMediator mediator) => _mediator = mediator;
+    private readonly IMediator _mediator = mediator;
 
     public async Task<ErrorOr<ScrappedDataResponse>> ScrapeArticle(string url)
     {
@@ -29,7 +27,7 @@ public sealed class DataScrapeService : IDataScrapeService
 
         string scrappedDate = document.QuerySelector("meta[property='article:published_time']")?.GetAttribute("content");
         string formattedDate = string.Empty;
-        if(DateTime.TryParse(scrappedDate, out var format))
+        if (DateTime.TryParse(scrappedDate, out var format))
         {
             formattedDate = format.ToString("hh:mm:ss dd/MM/yyyy");
         };
@@ -45,6 +43,7 @@ public sealed class DataScrapeService : IDataScrapeService
             return ErrorOr<IEnumerable<ScrappedDataResponse>>
                 .From(response.Errors);
         }
+
         var document = response.Value.Document;
 
         var origin = document.Location.Origin;
@@ -53,10 +52,10 @@ public sealed class DataScrapeService : IDataScrapeService
             .QuerySelectorAll("article")
             .Take(blogsRange)
             .Select(article => article
-                .QuerySelector("a.post-card-content-link")?
+                .QuerySelector("a")?
                 .GetAttribute("href") ?? "")
             .Where(x => !string.IsNullOrEmpty(x))
-            .Select(x => new Uri(new (origin), x))
+            .Select(x => new Uri(new(origin), x))
             .Select(x => ScrapeArticle(x.ToString()))
             .ToList();
 
