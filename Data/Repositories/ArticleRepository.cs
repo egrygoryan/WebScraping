@@ -29,4 +29,15 @@ public sealed class ArticleRepository : IArticleRepository
             existingArticles.Add(article);
         }
     }
+
+    public IEnumerable<Article> GetNewArticles(FilterNewArticlesRequest filter)
+    {
+        return _scrapedArticles
+            .Values
+            .SelectMany(articles => articles
+                .Where(x => x.PublishedDate >= filter.StartDate
+                    && x.PublishedDate <= filter.EndDate
+                    && x.Originality == Tag.New))
+            .ToList();
+    }
 }

@@ -1,3 +1,5 @@
+using Coravel;
+using WebScrapping.CustomMiddleware;
 using WebScrapping.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddServices();
+builder.Services.AddScheduler();
 
 var app = builder.Build();
 
@@ -21,8 +24,11 @@ app.UseExceptionMiddleware();
 
 app.UseHttpsRedirection();
 
+app.AddScheduler();
+
 app.MapPost("/api/v1/crawler/scrape", ScrapeEndpoint.ScrapeArticle);
 app.MapPost("/api/v1/crawler/blog/scrape", ScrapeEndpoint.ScrapeBlog);
-
+app.MapPost("/api/v1/blog/save", StoreEndpoint.StoreBlog);
+app.MapGet("/api/v1/articles/filter", ArticlesEndpoint.GetNewArticles);
 
 app.Run();
